@@ -1,9 +1,9 @@
 # nethack-flatpak
 
 An unofficial NetHack distribution. In most cases you probably want to use the
-version of nethack provided by your distribution, but you may wish to use this
-flatpak bundle if you want to avoid a system-wide install, or if you want to
-run a more recent nethack version.
+version of nethack provided by your package manager, but you may wish to use
+this flatpak bundle if you want to avoid a system-wide install, or if you want
+to run a more recent nethack version.
 
 ## Usage
 
