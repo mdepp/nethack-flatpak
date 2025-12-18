@@ -32,4 +32,4 @@ jobs:
         git tag "$RELEASE_TAG" --annotate -m "Release $RELEASE_TAG"
         git push --tags
 
-        gh release create --notes-from-tag --fail-on-no-commits "$RELEASE_TAG" nethack.flatpak
+        gh release create --notes-from-tag "$RELEASE_TAG" nethack.flatpak
