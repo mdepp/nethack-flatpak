@@ -1,0 +1,53 @@
+id: dev.mdepp.NetHack
+runtime: org.freedesktop.Platform
+runtime-version: '25.08'
+sdk: org.freedesktop.Sdk
+command: nethack-runner
+finish-args:
+  - --filesystem=~/.nethackrc:ro
+modules:
+  - name: nethack
+    buildsystem: simple
+    build-commands:
+      - cd sys/unix && ./setup.sh hints/linux.370
+      - make fetch-lua
+      # Put the wrapper shell script at /app/bin/nethack and the
+      # data/executables at /app/hackdir. The data files will later be copied to
+      # $XDG_DATA_HOME which serves as HACKDIR at runtime.
+      - make PREFIX=/var/prefix HACKDIR=/app/hackdir SHELLDIR=/app/bin WANT_WIN_TTY=1 WANT_WIN_CURSES=1 WANT_DEBUG=0 -j nethack
+      - make PREFIX=/var/prefix HACKDIR=/app/hackdir SHELLDIR=/app/bin WANT_WIN_TTY=1 WANT_WIN_CURSES=1 WANT_DEBUG=0 install
+      # By default the Makefile does this with clang but not gcc. Not sure why when
+      # I asked for DEBUG=0.
+      - |
+        sed -i -e 's;^GDBPATH=/usr/bin/gdb;\#GDBPATH=/usr/bin/gdb;' \
+          -e 's;PANICTRACE_GDB=1;PANICTRACE_GDB=0;' /app/hackdir/sysconf;
+      # Re-target HACKDIR to $XDG_DATA_HOME, but keep the nethack binary within
+      # the sandbox at /app/hackdir/nethack.
+      - sed -i "s;HACKDIR=/app/hackdir;HACKDIR=\$XDG_DATA_HOME;" "/app/bin/nethack"
+      - sed -i "s;HACK=\$HACKDIR/nethack;HACK=/app/hackdir/nethack;" "/app/bin/nethack"
+      # The nethack-runner script is responsible for copying /app/hackdir to
+      # the runtime HACKDIR during the first run. It then calls the wrapper
+      # shell script at /app/bin/nethack, which finally calls the binary at
+      # /app/hackdir/nethack.
+      - install -Dm755 nethack-runner ${FLATPAK_DEST}/bin/nethack-runner
+      - install -Dm644 metainfo.xml ${FLATPAK_DEST}/share/metainfo/${FLATPAK_ID}.metainfo.xml
+      - install -Dm644 nh.png ${FLATPAK_DEST}/share/icons/hicolor/40x40/apps/${FLATPAK_ID}.png
+    build-options:
+      build-args: ['--share=network']
+    sources:
+      - type: git
+        url: https://github.com/NetHack/NetHack.git
+        commit: 91cc3e3f129ca8448de54ba0ed109d91ead9fe4d
+      - type: script
+        dest-filename: nethack-runner
+        commands:
+          - mkdir -p "$XDG_DATA_HOME"
+          # Copy over the nethack config files but not the executables. We keep
+          # the executable within /app/hackdir.
+          - test -f "$XDG_DATA_HOME/license" || cp -rv /app/hackdir/. "$XDG_DATA_HOME/"
+          - rm -fv "$XDG_DATA_HOME/nethack" "$XDG_DATA_HOME/recover"
+          - /app/bin/nethack "$@"
+      - type: file
+        path: metainfo.xml
+      - type: file
+        path: nh.png
