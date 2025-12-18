@@ -1,0 +1,35 @@
+name: Release flatpak bundle
+
+on:
+  push:
+    branches: [ "main" ]
+
+permissions:
+  contents: write
+
+env:
+    GH_TOKEN: ${{ github.token }}
+
+jobs:
+  release:
+    name: Release
+    runs-on: ubuntu-latest
+    environment: production
+
+    steps:
+    - uses: actions/checkout@v6
+    - name: Release flatpak bundle
+      id: release-bundle
+      run: |
+        sudo apt-get update && sudo apt-get install -y flatpak-builder
+        flatpak remote-add --if-not-exists --user flathub https://dl.flathub.org/repo/flathub.flatpakrepo
+        flatpak-builder --force-clean --user --install-deps-from=flathub --repo=repo builddir dev.mdepp.NetHack.yml
+        flatpak build-bundle repo nethack.flatpak dev.mdepp.NetHack --runtime-repo=https://flathub.org/repo/flathub.flatpakrepo
+
+        RELEASE_TAG="release-$(date +%Y%m%d%H%M%S)"
+        git config user.name "github-actions[bot]"
+        git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+        git tag "$RELEASE_TAG" --annotate -m "Release $RELEASE_TAG"
+        git push --tags
+
+        gh release create --notes-from-tag --fail-on-no-commits "$RELEASE_TAG" nethack.flatpak
