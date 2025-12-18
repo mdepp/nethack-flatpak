@@ -25,3 +25,15 @@ example, if you use Bash, you could add the following to your bashrc:
 ```
 alias nethack='flatpak run dev.mdepp.NetHack'
 ```
+
+## Terminfo
+
+If you try to run the game in an unusual terminal (for example,
+[kitty](https://sw.kovidgoyal.net/kitty/)), you may see a message like "Error
+opening terminal: xterm-kitty". To fix this, copy your terminal's `terminfo`
+to ~/.terminfo/, e.g.
+
+```
+mkdir ~/.terminfo
+cp -v /usr/share/terminfo/x/xterm-kitty ~/.terminfo/x/
+```
