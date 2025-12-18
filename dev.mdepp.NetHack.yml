@@ -5,6 +5,7 @@ sdk: org.freedesktop.Sdk
 command: nethack-runner
 finish-args:
   - --filesystem=~/.nethackrc:ro
+  - --filesystem=~/.terminfo:ro
 modules:
   - name: nethack
     buildsystem: simple
